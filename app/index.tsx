@@ -137,12 +137,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFCC00",
-    justifyContent: "center",
-    alignItems: "center",
   },
   animation: {
     width: 350,
     height: 350,
+    paddingRight: 20,
   },
   absoluteFill: {
     ...StyleSheet.absoluteFillObject,

@@ -20,7 +20,7 @@ const STATUSBAR_HEIGHT =
   Platform.OS === "android" ? RNStatusBar.currentHeight || 40 : 40;
 
 const RECORDS_KEY = "records";
-const DAILY_REQUIRED_SECONDS = 8 * 3600; // 8 hours per day
+const ONGOING_KEY = "ongoingClockIn";
 
 const HomeScreen = () => {
   const [isClockedIn, setIsClockedIn] = useState(false);
@@ -66,6 +66,19 @@ const HomeScreen = () => {
       ]).start();
     }, [titleAnim, subtitleAnim, timeAnim, buttonAnim])
   );
+
+  // Restore ongoing clock-in if present
+  useEffect(() => {
+    (async () => {
+      const ongoing = await AsyncStorage.getItem(ONGOING_KEY);
+      if (ongoing) {
+        setIsClockedIn(true);
+        const date = new Date(ongoing);
+        setClockedInTime(date);
+        setElapsed(Math.floor((Date.now() - date.getTime()) / 1000));
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -137,12 +150,14 @@ const HomeScreen = () => {
       setIsClockedIn(false);
       setClockedInTime(null);
       setElapsed(0);
+      await AsyncStorage.removeItem(ONGOING_KEY); // Remove on clock out
     } else {
       // Clocking in
       setIsClockedIn(true);
       const now = new Date();
       setClockedInTime(now);
       setElapsed(0);
+      await AsyncStorage.setItem(ONGOING_KEY, now.toISOString()); // Save on clock in
     }
   };
 

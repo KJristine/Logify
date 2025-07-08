@@ -30,6 +30,7 @@ const RecordsScreen = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [records, setRecords] = useState<any[]>([]);
   const [totalHours, setTotalHours] = useState<number>(0); // default
+  const [ongoingSeconds, setOngoingSeconds] = useState(0);
 
   // Animation refs
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -108,6 +109,7 @@ const RecordsScreen = () => {
     const sub = DeviceEventEmitter.addListener("dataCleared", () => {
       setRecords([]);
       setTotalHours(0);
+      setOngoingSeconds(0);
     });
     return () => sub.remove();
   }, []);
@@ -144,6 +146,31 @@ const RecordsScreen = () => {
       ]).start();
     }, [headerAnim, monthAnim, statsAnim, timesheetAnim])
   );
+
+  // Ongoing timer effect (sync with Home ongoing clock-in)
+  useEffect(() => {
+    let interval: any;
+    const checkOngoing = async () => {
+      const ongoing = await AsyncStorage.getItem("ongoingClockIn");
+      if (ongoing) {
+        const clockInDate = new Date(ongoing);
+        setOngoingSeconds(
+          Math.floor((Date.now() - clockInDate.getTime()) / 1000)
+        );
+        interval = setInterval(() => {
+          setOngoingSeconds(
+            Math.floor((Date.now() - clockInDate.getTime()) / 1000)
+          );
+        }, 1000);
+      } else {
+        setOngoingSeconds(0);
+      }
+    };
+    checkOngoing();
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [records]);
 
   const TimesheetRow = ({
     day,
@@ -208,14 +235,6 @@ const RecordsScreen = () => {
     0,
     totalRequiredSeconds - totalRenderedSeconds
   );
-  const ongoingSeconds =
-    records.filter((rec) => !rec.timeOut).length > 0
-      ? Math.floor(
-          (Date.now() -
-            new Date(records.find((rec) => !rec.timeOut).timeIn).getTime()) /
-            1000
-        )
-      : 0;
 
   return (
     <SafeAreaView style={styles.container}>
