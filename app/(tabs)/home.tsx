@@ -301,6 +301,8 @@ const styles = StyleSheet.create({
     marginBottom: 36,
     width: "100%",
     alignSelf: "center",
+    borderWidth: 1,
+    borderColor: "#000",
     // shadow moved to Animated.View for smooth animation
   },
   timeText: {
