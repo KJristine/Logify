@@ -40,15 +40,7 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "kotlinVersion": "1.6.10"
-          }
-        }
-      ]
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
