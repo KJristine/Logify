@@ -15,6 +15,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import * as XLSX from "xlsx";
@@ -22,6 +23,7 @@ import { Text } from "../_layout";
 
 const SETTINGS_KEY = "settings";
 const RECORDS_KEY = "records";
+const TASKS_KEY = "tasks";
 
 const STATUSBAR_HEIGHT =
   Platform.OS === "android" ? RNStatusBar.currentHeight || 40 : 40;
@@ -30,6 +32,15 @@ const SettingsScreen = () => {
   const [totalHours, setTotalHours] = useState("0");
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState("0");
+
+  const { width } = useWindowDimensions();
+
+  // Responsive sizes
+  const headerFontSize = Math.max(26, Math.min(0.09 * width, 36));
+  const qrSize = Math.max(90, Math.min(0.32 * width, 140));
+  const qrHandleFontSize = Math.max(14, Math.min(0.05 * width, 18));
+  const inputFontSize = Math.max(16, Math.min(0.055 * width, 20));
+  const buttonFontSize = Math.max(15, Math.min(0.05 * width, 18));
 
   // Animation refs
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -112,19 +123,22 @@ const SettingsScreen = () => {
     return `${h}h ${m}m`;
   };
 
-  // Export detailed Excel
+  // Export detailed Excel (now includes tasks and photo)
   const exportToExcel = async () => {
     const data = await AsyncStorage.getItem(RECORDS_KEY);
     const settings = await AsyncStorage.getItem(SETTINGS_KEY);
+    const tasksData = await AsyncStorage.getItem(TASKS_KEY);
     const records = data ? JSON.parse(data) : [];
+    const tasks = tasksData ? JSON.parse(tasksData) : [];
     const totalHoursVal = settings
       ? JSON.parse(settings).totalHours || "0"
       : "0";
-    if (!records.length) {
-      Alert.alert("No records to export.");
+    if (!records.length && !tasks.length) {
+      Alert.alert("No records or tasks to export.");
       return;
     }
 
+    // Records sheet
     const detailedRows = records.map((rec: any) => {
       const timeInDate = new Date(rec.timeIn);
       const timeOutDate = rec.timeOut ? new Date(rec.timeOut) : null;
@@ -156,18 +170,34 @@ const SettingsScreen = () => {
       };
     });
 
-    const ws = XLSX.utils.json_to_sheet(detailedRows);
+    // Tasks sheet (includes photo URI)
+    const taskRows = tasks.map((task: any, idx: number) => ({
+      "#": idx + 1,
+      "Task Details": task.text || "",
+      "Photo URI": task.photo || "",
+      Date: task.date ? new Date(task.date).toLocaleDateString() : "",
+    }));
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Records");
+
+    if (detailedRows.length) {
+      const wsRecords = XLSX.utils.json_to_sheet(detailedRows);
+      XLSX.utils.book_append_sheet(wb, wsRecords, "Records");
+    }
+    if (taskRows.length) {
+      const wsTasks = XLSX.utils.json_to_sheet(taskRows);
+      XLSX.utils.book_append_sheet(wb, wsTasks, "Tasks");
+    }
+
     const wbout = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
-    const uri = FileSystem.cacheDirectory + "records.xlsx";
+    const uri = FileSystem.cacheDirectory + "logify_export.xlsx";
     await FileSystem.writeAsStringAsync(uri, wbout, {
       encoding: FileSystem.EncodingType.Base64,
     });
     await Sharing.shareAsync(uri, {
       mimeType:
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      dialogTitle: "Export Records",
+      dialogTitle: "Export Records & Tasks",
       UTI: "com.microsoft.excel.xlsx",
     });
   };
@@ -184,6 +214,7 @@ const SettingsScreen = () => {
           onPress: async () => {
             await AsyncStorage.removeItem(RECORDS_KEY);
             await AsyncStorage.removeItem(SETTINGS_KEY);
+            await AsyncStorage.removeItem(TASKS_KEY); // Clear tasks as well
             setTotalHours("0");
             setInputValue("0");
             DeviceEventEmitter.emit("dataCleared");
@@ -216,7 +247,9 @@ const SettingsScreen = () => {
                 ],
               }}
             >
-              <Text style={styles.header}>Settings</Text>
+              <Text style={[styles.header, { fontSize: headerFontSize }]}>
+                Settings
+              </Text>
             </Animated.View>
             <Animated.View
               style={{
@@ -232,8 +265,10 @@ const SettingsScreen = () => {
               }}
             >
               <View style={styles.qrCard}>
-                <QRCode value="@KJristine" size={120} />
-                <Text style={styles.qrHandle}>@KJristine</Text>
+                <QRCode value="@KJristine" size={qrSize} />
+                <Text style={[styles.qrHandle, { fontSize: qrHandleFontSize }]}>
+                  @KJristine
+                </Text>
               </View>
             </Animated.View>
             <Animated.View
@@ -259,7 +294,10 @@ const SettingsScreen = () => {
                     }}
                   >
                     <TextInput
-                      style={[styles.input, { flex: 1, marginRight: 8 }]}
+                      style={[
+                        styles.input,
+                        { flex: 1, marginRight: 8, fontSize: inputFontSize },
+                      ]}
                       keyboardType="numeric"
                       value={inputValue}
                       onChangeText={setInputValue}
@@ -271,13 +309,27 @@ const SettingsScreen = () => {
                       style={styles.saveButton}
                       onPress={handleSave}
                     >
-                      <Text style={styles.saveButtonText}>Save</Text>
+                      <Text
+                        style={[
+                          styles.saveButtonText,
+                          { fontSize: buttonFontSize },
+                        ]}
+                      >
+                        Save
+                      </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.cancelButton}
                       onPress={handleCancel}
                     >
-                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                      <Text
+                        style={[
+                          styles.cancelButtonText,
+                          { fontSize: buttonFontSize },
+                        ]}
+                      >
+                        Cancel
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -286,7 +338,12 @@ const SettingsScreen = () => {
                     onPress={() => setEditing(true)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.inputButtonText}>
+                    <Text
+                      style={[
+                        styles.inputButtonText,
+                        { fontSize: inputFontSize },
+                      ]}
+                    >
                       SET YOUR TOTAL HOURS{totalHours ? ` (${totalHours})` : ""}
                     </Text>
                   </TouchableOpacity>
@@ -315,12 +372,18 @@ const SettingsScreen = () => {
               style={styles.exportButton}
               onPress={exportToExcel}
             >
-              <Text style={styles.exportButtonText}>
+              <Text
+                style={[styles.exportButtonText, { fontSize: buttonFontSize }]}
+              >
                 EXPORT RECORDS TO EXCEL
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.clearButton} onPress={clearAllData}>
-              <Text style={styles.clearButtonText}>CLEAR ALL DATA</Text>
+              <Text
+                style={[styles.clearButtonText, { fontSize: buttonFontSize }]}
+              >
+                CLEAR ALL DATA
+              </Text>
             </TouchableOpacity>
           </Animated.View>
         </KeyboardAvoidingView>
@@ -351,7 +414,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   header: {
-    fontSize: 36,
     color: "#222",
     marginBottom: 20,
   },
@@ -366,7 +428,6 @@ const styles = StyleSheet.create({
   },
   qrHandle: {
     marginTop: 10,
-    fontSize: 16,
     color: "#222",
     fontWeight: "500",
     letterSpacing: 0.5,
@@ -386,7 +447,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   inputButtonText: {
-    fontSize: 16,
     color: "#222",
     fontWeight: "500",
     letterSpacing: 0.5,
@@ -397,7 +457,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#222",
     borderRadius: 8,
-    fontSize: 18,
     textAlign: "center",
     backgroundColor: "#fff",
     color: "#222",
@@ -415,7 +474,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 15,
   },
   cancelButton: {
     backgroundColor: "#bbb",
@@ -428,7 +486,6 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: "#222",
     fontWeight: "bold",
-    fontSize: 15,
   },
   exportButton: {
     width: "100%",
@@ -441,7 +498,6 @@ const styles = StyleSheet.create({
     borderColor: "#222",
   },
   exportButtonText: {
-    fontSize: 16,
     color: "#222",
     fontWeight: "bold",
     letterSpacing: 0.5,
@@ -457,7 +513,6 @@ const styles = StyleSheet.create({
     borderColor: "#222",
   },
   clearButtonText: {
-    fontSize: 16,
     color: "#fff",
     fontWeight: "bold",
     letterSpacing: 0.5,

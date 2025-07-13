@@ -12,6 +12,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { Text } from "../_layout";
 
@@ -31,6 +32,18 @@ const RecordsScreen = () => {
   const [records, setRecords] = useState<any[]>([]);
   const [totalHours, setTotalHours] = useState<number>(0); // default
   const [ongoingSeconds, setOngoingSeconds] = useState(0);
+
+  const { width } = useWindowDimensions();
+
+  // Responsive sizes
+  const headerFontSize = Math.max(26, Math.min(0.09 * width, 36));
+  const monthFontSize = Math.max(13, Math.min(0.045 * width, 18));
+  const statTitleFontSize = Math.max(11, Math.min(0.035 * width, 15));
+  const statValueFontSize = Math.max(22, Math.min(0.08 * width, 32));
+  const timesheetTitleFontSize = Math.max(16, Math.min(0.055 * width, 22));
+  const dayFontSize = Math.max(18, Math.min(0.07 * width, 30));
+  const timeLabelFontSize = Math.max(10, Math.min(0.035 * width, 13));
+  const timeValueFontSize = Math.max(11, Math.min(0.04 * width, 15));
 
   // Animation refs
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -189,28 +202,44 @@ const RecordsScreen = () => {
   }) => (
     <View style={[styles.timesheetRow, isLast && styles.timesheetRowLast]}>
       <View style={styles.dayNumber}>
-        <Text style={styles.dayText}>{day}</Text>
+        <Text style={[styles.dayText, { fontSize: dayFontSize }]}>{day}</Text>
       </View>
       <View style={styles.timeContent}>
         <View style={styles.timeRow}>
           <View style={styles.leftColumn}>
             <View style={styles.inlineRow}>
-              <Text style={styles.timeLabel}>TIME IN: </Text>
-              <Text style={styles.timeValue}>{timeIn || ""}</Text>
+              <Text style={[styles.timeLabel, { fontSize: timeLabelFontSize }]}>
+                TIME IN:{" "}
+              </Text>
+              <Text style={[styles.timeValue, { fontSize: timeValueFontSize }]}>
+                {timeIn || ""}
+              </Text>
             </View>
             <View style={styles.inlineRow}>
-              <Text style={styles.timeLabel}>TIME OUT: </Text>
-              <Text style={styles.timeValue}>{timeOut || ""}</Text>
+              <Text style={[styles.timeLabel, { fontSize: timeLabelFontSize }]}>
+                TIME OUT:{" "}
+              </Text>
+              <Text style={[styles.timeValue, { fontSize: timeValueFontSize }]}>
+                {timeOut || ""}
+              </Text>
             </View>
           </View>
           <View style={styles.rightColumn}>
             <View style={styles.inlineRow}>
-              <Text style={styles.timeLabel}>RENDERED: </Text>
-              <Text style={styles.timeValue}>{rendered || ""}</Text>
+              <Text style={[styles.timeLabel, { fontSize: timeLabelFontSize }]}>
+                RENDERED:{" "}
+              </Text>
+              <Text style={[styles.timeValue, { fontSize: timeValueFontSize }]}>
+                {rendered || ""}
+              </Text>
             </View>
             <View style={styles.inlineRow}>
-              <Text style={styles.timeLabel}>REMAINING: </Text>
-              <Text style={styles.timeValue}>{remaining || ""}</Text>
+              <Text style={[styles.timeLabel, { fontSize: timeLabelFontSize }]}>
+                REMAINING:{" "}
+              </Text>
+              <Text style={[styles.timeValue, { fontSize: timeValueFontSize }]}>
+                {remaining || ""}
+              </Text>
             </View>
           </View>
         </View>
@@ -220,8 +249,12 @@ const RecordsScreen = () => {
 
   const StatCard = ({ title, value }: { title: string; value: string }) => (
     <View style={styles.statCard}>
-      <Text style={styles.statTitle}>{title}</Text>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={[styles.statTitle, { fontSize: statTitleFontSize }]}>
+        {title}
+      </Text>
+      <Text style={[styles.statValue, { fontSize: statValueFontSize }]}>
+        {value}
+      </Text>
     </View>
   );
 
@@ -258,7 +291,9 @@ const RecordsScreen = () => {
             ],
           }}
         >
-          <Text style={styles.header}>Records</Text>
+          <Text style={[styles.header, { fontSize: headerFontSize }]}>
+            Records
+          </Text>
         </Animated.View>
 
         {/* Month Navigation */}
@@ -280,7 +315,7 @@ const RecordsScreen = () => {
               <Ionicons name="chevron-back" size={24} color="#666" />
             </TouchableOpacity>
             <View style={styles.monthContainer}>
-              <Text style={styles.monthText}>
+              <Text style={[styles.monthText, { fontSize: monthFontSize }]}>
                 {getCurrentMonthName().toUpperCase()}
               </Text>
             </View>
@@ -343,7 +378,14 @@ const RecordsScreen = () => {
           }}
         >
           <View style={styles.timesheetContainer}>
-            <Text style={styles.timesheetTitle}>Timesheet</Text>
+            <Text
+              style={[
+                styles.timesheetTitle,
+                { fontSize: timesheetTitleFontSize },
+              ]}
+            >
+              Timesheet
+            </Text>
             <View style={styles.timesheetList}>
               {records.length === 0 && (
                 <Text
@@ -419,7 +461,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   header: {
-    fontSize: 36,
     color: "#222",
     marginBottom: 20,
     marginTop: 20,
@@ -442,7 +483,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   monthText: {
-    fontSize: 16,
     color: "#666",
     letterSpacing: 0.5,
   },
@@ -466,14 +506,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   statTitle: {
-    fontSize: 13,
     color: "#666",
     marginBottom: 8,
     letterSpacing: 0.5,
     textAlign: "center",
   },
   statValue: {
-    fontSize: 32,
     color: "#222",
     textAlign: "center",
     letterSpacing: 1,
@@ -483,7 +521,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   timesheetTitle: {
-    fontSize: 20,
     color: "#222",
     marginBottom: 25,
   },
@@ -514,7 +551,6 @@ const styles = StyleSheet.create({
     borderRightColor: "#000",
   },
   dayText: {
-    fontSize: 30,
     color: "#222",
   },
   timeContent: {
@@ -540,12 +576,10 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   timeLabel: {
-    fontSize: 12,
     color: "#666",
     fontWeight: "400",
   },
   timeValue: {
-    fontSize: 13,
     color: "#222",
     marginLeft: 2,
     marginBottom: 0,

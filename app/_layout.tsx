@@ -27,5 +27,5 @@ export default function RootLayout() {
     return null; // Or a loading spinner
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <Stack screenOptions={{ headerShown: false }}></Stack>;
 }
